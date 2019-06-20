@@ -1,0 +1,191 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  StepFunctionsDemo
+
+  Sample SAM Template for StepFunctionsDemo
+
+Globals:
+  Function:
+    Timeout: 3
+    VpcConfig:
+      SecurityGroupIds:
+      - !Ref SecurityGroup
+      SubnetIds:
+      - !Ref Subnet1
+      - !Ref Subnet2
+
+Resources:
+  Plus3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: calculations/
+      Handler: plus3.lambda_handler
+      Runtime: ruby2.5
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          Resource: "*"
+  Minus3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: calculations/
+      Handler: minus3.lambda_handler
+      Runtime: ruby2.5
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          Resource: "*"
+  Multipled3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: calculations/
+      Handler: multipled3.lambda_handler
+      Runtime: ruby2.5
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          Resource: "*"
+  Divided3Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: calculations/
+      Handler: divided3.lambda_handler
+      Runtime: ruby2.5
+      Policies:
+      - AWSLambdaBasicExecutionRole
+      - Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - ec2:CreateNetworkInterface
+          - ec2:DescribeNetworkInterfaces
+          - ec2:DeleteNetworkInterface
+          Resource: "*"
+
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.38.0.0/16
+      Tags:
+      - Key: Name
+        Value: step-functions-demo-vpc
+  Subnet1:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.38.0.0/24
+  Subnet2:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref Vpc
+      CidrBlock: 10.38.1.0/24
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: serverless-deploy-demo
+      GroupDescription: serverless-deploy-demo
+      VpcId: !Ref Vpc
+
+  StateMachine:
+    Type: AWS::StepFunctions::StateMachine
+    Properties:
+      StateMachineName: StepFunctionsDemo
+      RoleArn: !GetAtt StepFunctionsServiceRole.Arn
+      DefinitionString: !Sub |-
+        {
+          "Comment": "((((value / 3) - 3) * 3) + 3)",
+          "StartAt": "Divided3",
+          "States": {
+            "Divided3": {
+              "Type": "Task",
+              "Resource": "${Divided3Function.Arn}",
+              "InputPath": "$",
+              "OutputPath": "$",
+              "Next": "Minus3"
+            },
+            "Minus3": {
+              "Type": "Task",
+              "Resource": "${Minus3Function.Arn}",
+              "InputPath": "$",
+              "OutputPath": "$",
+              "Next": "Multipled3"
+            },
+            "Multipled3": {
+              "Type": "Task",
+              "Resource": "${Multipled3Function.Arn}",
+              "InputPath": "$",
+              "OutputPath": "$",
+              "Next": "Plus3"
+            },
+            "Plus3": {
+              "Type": "Task",
+              "Resource": "${Plus3Function.Arn}",
+              "InputPath": "$",
+              "OutputPath": "$",
+              "End": true
+            }
+          }
+        }
+
+  StepFunctionsServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /service-role/
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action: 
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - states.amazonaws.com
+      Policies:
+      - PolicyName: StepFunctionsDemoLambdaInvokePolicy
+        PolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+          - Effect: Allow
+            Action:
+            - lambda:InvokeFunction
+            Resource: 
+            - !Sub ${Plus3Function.Arn}
+            - !Sub ${Minus3Function.Arn}
+            - !Sub ${Multipled3Function.Arn}
+            - !Sub ${Divided3Function.Arn}
+
+
+
+
+#Outputs:
+#  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+#  # Find out more about other implicit resources you can reference within SAM
+#  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+#  HelloWorldApi:
+#    Description: "API Gateway endpoint URL for Prod stage for Hello World function"
+#    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/hello/"
+#  HelloWorldFunction:
+#    Description: "Hello World Lambda Function ARN"
+#    Value: !GetAtt HelloWorldFunction.Arn
+#  HelloWorldFunctionIamRole:
+#    Description: "Implicit IAM Role created for Hello World function"
+#    Value: !GetAtt HelloWorldFunctionRole.Arn
