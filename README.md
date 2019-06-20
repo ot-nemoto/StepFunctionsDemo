@@ -36,6 +36,7 @@ STATE_MACHINE_ARN=$(aws cloudformation describe-stacks \
   --output text)
 echo ${STATE_MACHINE_ARN}
 
+# ((((0.5 / 3) - 3) * 3) + 3)
 aws stepfunctions start-execution --state-machine-arn ${STATE_MACHINE_ARN} --input "{\"value\" : \"0.5\"}"
 ```
 
