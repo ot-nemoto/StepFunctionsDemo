@@ -32,7 +32,7 @@
 ## デプロイ
 
 ```sh
-make deploy
+make deploy email=<NotificationEmail>
 ```
 
 ## Step Functions ステートマシンを直接実行
