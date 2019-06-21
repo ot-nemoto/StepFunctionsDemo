@@ -21,6 +21,14 @@
 { "value" : <数値> }
 ```
 
+## サービス構成
+
+![サービス構成](https://raw.githubusercontent.com/ot-nemoto/StepFunctionsDemo/master/step-functions-demo.png)
+
+## ステートマシンの定義
+
+![ステートマシンの定義](https://raw.githubusercontent.com/ot-nemoto/StepFunctionsDemo/master/step-functions-demo-stateMachine.png)
+
 ## デプロイ
 
 ```sh
