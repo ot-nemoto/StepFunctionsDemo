@@ -27,7 +27,7 @@
 make deploy
 ```
 
-## Step Functions ステートマシン実行
+## Step Functions ステートマシンを直接実行
 
 ```sh
 STATE_MACHINE_ARN=$(aws cloudformation describe-stacks \
@@ -38,6 +38,20 @@ echo ${STATE_MACHINE_ARN}
 
 # ((((0.5 / 3) - 3) * 3) + 3)
 aws stepfunctions start-execution --state-machine-arn ${STATE_MACHINE_ARN} --input "{\"value\" : \"0.5\"}"
+```
+
+## APIからStep Functions ステートマシンを実行
+
+```sh
+STEP_FUNCTIONS_API=$(aws cloudformation describe-stacks \
+  --stack-name step-functions-demo-stack \
+  --query 'Stacks[].Outputs[?OutputKey==`StepFunctionsAPI`].OutputValue' \
+  --output text)
+echo ${STEP_FUNCTIONS_API}
+
+# ((((0.5 / 3) - 3) * 3) + 3)
+value=0.5
+curl $(echo ${STEP_FUNCTIONS_API} | sed "s/{value}/${value}/g")
 ```
 
 ## アンデプロイ

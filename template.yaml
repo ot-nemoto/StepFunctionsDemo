@@ -173,6 +173,78 @@ Resources:
             - !Sub ${Multipled3Function.Arn}
             - !Sub ${Divided3Function.Arn}
 
+  StepFunctionsAPI:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        swagger: "2.0"
+        info:
+          version: "1.0"
+          title: StepFunctionsAPI
+        schemes:
+        - https
+        paths:
+          execution/{value}:
+            get:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses:
+                "200":
+                  description: "200 response"
+                  schema:
+                    $ref: "#/definitions/Empty"
+                  headers:
+                    Access-Control-Allow-Origin:
+                      type: string
+              x-amazon-apigateway-integration:
+                credentials: !GetAtt ApiGatewayStepFunctionsAPIRole.Arn
+                uri: !Sub "arn:aws:apigateway:${AWS::Region}:states:action/StartExecution"
+                responses:
+                  default:
+                    statusCode: 200
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Origin: "'*'"
+                requestTemplates:
+                  application/json: !Sub |
+                     {
+                       "input": "{\"value\": $input.params('value')}",
+                       "stateMachineArn": "${StateMachine}"
+                     }
+                passthroughBehavior: when_no_templates
+                httpMethod: POST
+                type: aws
+        definitions:
+          Empty:
+            title: Empty Schema
+            type: object
+          Error:
+            title: Error Schema
+            type: object
+            properties:
+              message:
+                type: string
+
+  ApiGatewayStepFunctionsAPIRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+        - Effect: Allow
+          Action:
+          - sts:AssumeRole
+          Principal:
+            Service:
+            - apigateway.amazonaws.com
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+
 Outputs:
   StateMachineArn:
     Value: !Ref StateMachine
+  StepFunctionsAPI:
+    Value: !Sub "https://${StepFunctionsAPI}.execute-api.${AWS::Region}.amazonaws.com/Prod/execution/{value}"
