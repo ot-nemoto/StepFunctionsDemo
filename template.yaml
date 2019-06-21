@@ -5,6 +5,10 @@ Description: >
 
   Sample SAM Template for StepFunctionsDemo
 
+Parameters:
+  NotificationEmail:
+    Type: String
+
 Globals:
   Function:
     Timeout: 3
@@ -141,6 +145,15 @@ Resources:
               "Resource": "${Plus3Function.Arn}",
               "InputPath": "$",
               "OutputPath": "$",
+              "Next": "Notify"
+            },
+            "Notify": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::sns:publish",
+              "Parameters": {
+                "Message": { "value.$" : "$.value" },
+                "TopicArn": "${SnsTopic}"
+              },
               "End": true
             }
           }
@@ -172,6 +185,11 @@ Resources:
             - !Sub ${Minus3Function.Arn}
             - !Sub ${Multipled3Function.Arn}
             - !Sub ${Divided3Function.Arn}
+          - Effect: Allow
+            Action:
+            - SNS:Publish
+            Resource:
+            - !Ref SnsTopic
 
   StepFunctionsAPI:
     Type: AWS::Serverless::Api
@@ -242,6 +260,13 @@ Resources:
             - apigateway.amazonaws.com
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/AWSStepFunctionsFullAccess
+
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      Subscription:
+      - Endpoint: !Ref NotificationEmail
+        Protocol: email
 
 Outputs:
   StateMachineArn:

@@ -1,6 +1,7 @@
 deploy_bucket_stack_name = step-functions-demo-bucket-stack
 sam_stack_name = step-functions-demo-stack
 make = make --no-print-directory
+email = step-functions-demo@example.com
 
 create-deploy-bucket-stack:
 ifneq ($(shell aws cloudformation describe-stacks \
@@ -16,7 +17,7 @@ deploy: create-deploy-bucket-stack
 	  --query 'Stacks[].Outputs[?OutputKey==`S3Bucket`].OutputValue' \
 	  --output text))
 	sam package --s3-bucket $(bucket) --output-template-file packaged.yml
-	sam deploy --template-file packaged.yml --stack-name $(sam_stack_name) --capabilities CAPABILITY_IAM
+	sam deploy --template-file packaged.yml --stack-name $(sam_stack_name) --capabilities CAPABILITY_IAM --parameter-overrides NotificationEmail=${email}
 
 undeploy:
 	aws cloudformation delete-stack --stack-name $(sam_stack_name)
